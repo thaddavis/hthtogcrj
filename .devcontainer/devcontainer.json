@@ -1,0 +1,28 @@
+{
+  "name": "hthaogcrj with Python, gcloud, & Docker",
+  "build": {
+    "dockerfile": "../Dockerfile.dev"
+  },
+  "customizations": {
+    "vscode": {
+        "extensions": [
+            "ms-python.python",
+            "ms-python.vscode-pylance",
+            "ms-python.black-formatter",
+            "ms-python.debugpy",
+            "ms-azuretools.vscode-docker"
+        ],
+        "settings": {}
+    }
+  },
+  "forwardPorts": [
+    "5678:5678"
+  ],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/code,type=bind,consistency=delegated",
+  "workspaceFolder": "/code",
+  "runArgs": [
+    "--privileged",  // Allows the container to use Docker functionalities
+    "-v", "/var/run/docker.sock:/var/run/docker.sock" // Mount Docker socket
+  ],
+  "postCreateCommand": "sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock && sudo usermod -aG docker $(whoami)"
+}

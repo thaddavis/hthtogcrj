@@ -1,0 +1,63 @@
+FROM python:3.12-slim
+
+# Install dependencies for Docker and Google Cloud SDK
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates gnupg curl git vim
+
+# Add Google Cloud SDK repository and install the CLI
+RUN curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
+    | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+RUN apt-get update && \
+    apt-get install -y net-tools build-essential google-cloud-cli=498.0.0-0
+
+# Install dependencies for Docker and general packages
+RUN apt-get update && \
+    apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release sudo && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
+    | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y docker-ce-cli
+
+# Check if the 'docker' group exists, and create it if not
+RUN if ! getent group docker; then groupadd docker; fi
+
+# Create a 'vscode' user and use the existing GID 1000 if it exists
+RUN if ! id -u vscode 2>/dev/null; then \
+        if getent group 1000; then \
+            useradd -m -s /bin/bash -u 1000 -g 1000 vscode; \
+        else \
+            groupadd -g 1000 vscode && \
+            useradd -m -s /bin/bash -u 1000 -g vscode vscode; \
+        fi; \
+    fi
+
+# Add 'vscode' to the 'docker' group if it exists
+RUN usermod -aG docker vscode || true
+
+# Allow 'vscode' user to run sudo without a password
+RUN echo "vscode ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+# Set 'vscode' as the default user
+USER vscode
+
+WORKDIR /code
+ENV PYTHONPATH=/code
+
+# set up aliases
+RUN echo "alias gaa='git add .'" >> ~/.bashrc \
+  && echo "alias gb='git branch'" >> ~/.bashrc \
+  && echo "alias gbd='git branch --delete'" >> ~/.bashrc \
+  && echo "alias gc='git commit'" >> ~/.bashrc \
+  && echo "alias gcm='git commit --message'" >> ~/.bashrc \
+  && echo "alias gco='git checkout'" >> ~/.bashrc \
+  && echo "alias gcob='git checkout -b'" >> ~/.bashrc \
+  && echo "alias gd='git diff'" >> ~/.bashrc \
+  && echo "alias gl='git log'" >> ~/.bashrc \
+  && echo "alias glg='git log --graph --oneline --decorate --all'" >> ~/.bashrc \
+  && echo "alias gld='git log --pretty=format:\"%h %ad %s\" --date=short --all'" >> ~/.bashrc \
+  && echo "alias gm='git merge --no-ff'" >> ~/.bashrc \
+  && echo "alias gp='git pull'" >> ~/.bashrc \
+  && echo "alias gs='git status'" >> ~/.bashrc \
+  && echo "alias gss='git status --short'" >> ~/.bashrc
