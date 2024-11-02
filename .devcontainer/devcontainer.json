@@ -1,5 +1,5 @@
 {
-  "name": "hthaogcrj with Python, gcloud, & Docker",
+  "name": "hthtogcrj with Python, gcloud, & Docker",
   "build": {
     "dockerfile": "../Dockerfile.dev"
   },
